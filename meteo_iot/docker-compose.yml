@@ -1,0 +1,103 @@
+version: '3.8'
+
+networks:
+  cassandra-net:
+    driver: bridge
+
+services:
+
+  cassandra-node1:
+    image: cassandra:latest
+    container_name: cassandra-node1
+    hostname: cassandra-node1
+    networks:
+      - cassandra-net
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MeteoDoualCluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra-node1
+      - CASSANDRA_NUM_TOKENS=16
+      - CASSANDRA_INITIAL_TOKEN=-9223372036854775808
+      - MAX_HEAP_SIZE=200M
+      - HEAP_NEWSIZE=50M
+    volumes:
+      - cassandra-data1:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN'"]
+      interval: 30s
+      timeout: 15s
+      retries: 20
+      start_period: 120s
+
+  cassandra-node2:
+    image: cassandra:latest
+    container_name: cassandra-node2
+    hostname: cassandra-node2
+    networks:
+      - cassandra-net
+    ports:
+      - "9043:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MeteoDoualCluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra-node1
+      - CASSANDRA_NUM_TOKENS=16
+      - CASSANDRA_INITIAL_TOKEN=-3074457345618258603
+      - MAX_HEAP_SIZE=200M
+      - HEAP_NEWSIZE=50M
+      - JVM_OPTS=-Dcassandra.consistent.rangemovement=false
+    volumes:
+      - cassandra-data2:/var/lib/cassandra
+    depends_on:
+      cassandra-node1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN'"]
+      interval: 30s
+      timeout: 15s
+      retries: 20
+      start_period: 120s
+
+  cassandra-node3:
+    image: cassandra:latest
+    container_name: cassandra-node3
+    hostname: cassandra-node3
+    networks:
+      - cassandra-net
+    ports:
+      - "9044:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=MeteoDoualCluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra-node1
+      - CASSANDRA_NUM_TOKENS=16
+      - CASSANDRA_INITIAL_TOKEN=3074457345618258602
+      - MAX_HEAP_SIZE=200M
+      - HEAP_NEWSIZE=50M
+      - JVM_OPTS=-Dcassandra.consistent.rangemovement=false
+    volumes:
+      - cassandra-data3:/var/lib/cassandra
+    depends_on:
+      cassandra-node1:
+        condition: service_healthy
+      cassandra-node2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN'"]
+      interval: 30s
+      timeout: 15s
+      retries: 20
+      start_period: 120s
+
+volumes:
+  cassandra-data1:
+  cassandra-data2:
+  cassandra-data3:
